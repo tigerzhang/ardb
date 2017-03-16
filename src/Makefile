@@ -138,7 +138,7 @@ endif
 
 storage_engine?=rocksdb
 
-LIBS= ${LUA_LIBA} ${MALLOC_LIBA} ${SNAPPY_LIBA} -lpthread 
+LIBS= ${LUA_LIBA} ${MALLOC_LIBA} ${SNAPPY_LIBA} -lpthread -llz4
 
 # Default allocator
 ifeq ($(uname_S),Linux)
