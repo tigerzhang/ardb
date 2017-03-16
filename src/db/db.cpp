@@ -167,7 +167,7 @@ OP_NAMESPACE_BEGIN
         { "pubsub", REDIS_CMD_PUBSUB, &Ardb::Pubsub, 1, -1, "pltrF", 0, 0, 0 },
         { "info", REDIS_CMD_INFO, &Ardb::Info, 0, 1, "rlt", 0, 0, 0 },
         { "save", REDIS_CMD_SAVE, &Ardb::Save, 0, 1, "ars", 0, 0, 0 },
-        { "bgsave", REDIS_CMD_BGSAVE, &Ardb::BGSave, 0, 1, "ar", 0, 0, 0 },
+        { "bgsave", REDIS_CMD_BGSAVE, &Ardb::BGSave, 0, 2, "ar", 0, 0, 0 },
         { "import", REDIS_CMD_IMPORT, &Ardb::Import, 1, 1, "aws", 0, 0, 0 },
         { "lastsave", REDIS_CMD_LASTSAVE, &Ardb::LastSave, 0, 0, "r", 0, 0, 0 },
         { "slowlog", REDIS_CMD_SLOWLOG, &Ardb::SlowLog, 1, 2, "r", 0, 0, 0 },

@@ -120,6 +120,7 @@ extern "C"
 
 namespace ardb
 {
+    extern std::string backup_filename;
 
     static time_t g_lastsave = 0;
     static int g_saver_num = 0;
@@ -1562,6 +1563,7 @@ namespace ardb
             return 0;
         }
         Close();
+        INFO_LOG("Rename: %s", default_file.c_str());
         int ret = rename(GetPath().c_str(), default_file.c_str());
         if (0 == ret)
         {
@@ -1974,7 +1976,9 @@ namespace ardb
             ERROR_LOG("There is already a background task saving data.");
             return -1;
         }
-        int ret = PrepareSave(type, file, cb, data);
+        char tmpname[1024];
+        snprintf(tmpname, sizeof(tmpname) - 1, "%s.%llu.tmp", file.c_str(), get_current_epoch_millis());
+        int ret = PrepareSave(type, tmpname, cb, data);
         if (0 != ret)
         {
             return ret;
@@ -1982,17 +1986,33 @@ namespace ardb
         struct BGTask: public Thread
         {
                 Snapshot* serv;
-                BGTask(Snapshot* s) :
-                        serv(s)
+                std::string file;
+                BGTask(Snapshot* s, std::string file) :
+                        serv(s),
+                        file(file)
                 {
                 }
                 void Run()
                 {
-                    serv->DoSave();
+                    INFO_LOG("Start to save snapshot file:%s with type:%s.",
+                             file.c_str(),
+                             (serv->m_type == REDIS_DUMP) ? "redis" : "ardb");
+                    int ret = serv->DoSave();
+                    char snapshot_name[1024];
+                    if (!backup_filename.empty()) {
+                        snprintf(snapshot_name, sizeof(snapshot_name) - 1, "%s.%s",
+                                 file.c_str(), backup_filename.c_str());
+                    } else {
+                        snprintf(snapshot_name, sizeof(snapshot_name) - 1, "%s.%llu.%llu.%u", file.c_str(),
+                                 serv->m_cached_repl_offset,
+                                 serv->m_cached_repl_cksm,
+                                 serv->m_save_time);
+                    }
+                    serv->Rename(snapshot_name);
                     delete this;
                 }
         };
-        BGTask* task = new BGTask(this);
+        BGTask* task = new BGTask(this, file);
         task->Start();
         return 0;
     }

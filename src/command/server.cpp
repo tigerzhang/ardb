@@ -42,6 +42,8 @@
 
 namespace ardb
 {
+    std::string backup_filename;
+
     static int RDBSaveLoadRoutine(SnapshotState state, Snapshot* snapshot, void* cb)
     {
         ChannelService* serv = (ChannelService*) cb;
@@ -103,7 +105,7 @@ namespace ardb
     {
         RedisReply& reply = ctx.GetReply();
         SnapshotType type = REDIS_DUMP;
-        if (cmd.GetArguments().size() == 1)
+        if (cmd.GetArguments().size() >= 1)
         {
             type = Snapshot::GetSnapshotTypeByName(cmd.GetArguments()[0]);
             if (type == -1)
@@ -112,6 +114,12 @@ namespace ardb
                 return 0;
             }
         }
+
+        if (cmd.GetArguments().size() == 2) {
+            auto filename = cmd.GetArguments()[1];
+            backup_filename = filename;
+        }
+
         Snapshot* snapshot = g_snapshot_manager->NewSnapshot(type, true, NULL, NULL);
         if (NULL != snapshot)
         {
