@@ -35,6 +35,8 @@
 #include "thread/lock_guard.hpp"
 #include "thread/spin_mutex_lock.hpp"
 #include "db/db.hpp"
+#include "util/string_helper.hpp"
+
 
 OP_NAMESPACE_BEGIN
 
@@ -217,7 +219,7 @@ OP_NAMESPACE_BEGIN
                     size_t buf_len = 1024;
                     NEW(buffer, char[buf_len]);
                     int n = vsnprintf(buffer, buf_len - 1, format, ap);
-                    if (n > 0)
+                    if (n > 0 && NULL != buffer)
                     {
                         buffer[n] = 0;
                         LOG_WITH_LEVEL(level, "[RocksDB]%s", buffer);
@@ -810,7 +812,14 @@ OP_NAMESPACE_BEGIN
             ERROR_LOG("Invalid rocksdb's options:%s with error reason:%s", conf.c_str(), s.ToString().c_str());
             return -1;
         }
-        m_options.OptimizeLevelStyleCompaction();
+        if(strcasecmp(g_db->GetConf().rocksdb_compaction.c_str(),"OptimizeLevelStyleCompaction")==0 )
+        {
+            m_options.OptimizeLevelStyleCompaction();
+
+        } else if (strcasecmp(g_db->GetConf().rocksdb_compaction.c_str(),"OptimizeUniversalStyleCompaction")==0 ) {
+        	m_options.OptimizeUniversalStyleCompaction();
+        }
+
         m_options.IncreaseParallelism();
         m_options.stats_dump_period_sec = (unsigned int) g_db->GetConf().statistics_log_period;
         m_dbdir = dir;
@@ -1314,7 +1323,7 @@ OP_NAMESPACE_BEGIN
         features.support_namespace = 1;
         features.support_merge = 1;
         features.support_backup = 1;
-        features.support_delete_range = 0;
+        features.support_delete_range = 1;
         return features;
     }
 

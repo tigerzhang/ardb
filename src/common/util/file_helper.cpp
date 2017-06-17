@@ -39,6 +39,7 @@
 #include <stdio.h>
 #include <dirent.h>
 #include <errno.h>
+#include <limits.h>
 #include "sha1.h"
 
 namespace ardb
@@ -414,11 +415,12 @@ namespace ardb
 
     int real_path(const std::string& path, std::string& real_path)
     {
-        char* tmp = realpath(path.c_str(), NULL);
+        char buf[PATH_MAX + 1];
+        char* tmp = realpath(path.c_str(), buf);
         if (NULL != tmp)
         {
             real_path.assign(tmp);
-            free(tmp);
+            //free(tmp);
             return 0;
         }
         return errno;
@@ -437,12 +439,14 @@ namespace ardb
         int saved_errno;
 
         fd_from = open(src.c_str(), O_RDONLY);
-        if (fd_from < 0)
-            return -1;
+        if (fd_from < 0) return -1;
 
+        remove(dst.c_str());
         fd_to = open(dst.c_str(), O_WRONLY | O_CREAT | O_EXCL, 0666);
         if (fd_to < 0)
+        {
             goto out_error;
+        }
 
         while (nread = read(fd_from, buf, sizeof buf), nread > 0)
         {
@@ -462,7 +466,8 @@ namespace ardb
                 {
                     goto out_error;
                 }
-            } while (nread > 0);
+            }
+            while (nread > 0);
         }
 
         if (nread == 0)
@@ -481,8 +486,7 @@ namespace ardb
         out_error: saved_errno = errno;
 
         close(fd_from);
-        if (fd_to >= 0)
-            close(fd_to);
+        if (fd_to >= 0) close(fd_to);
 
         errno = saved_errno;
         return -1;
@@ -495,8 +499,11 @@ namespace ardb
         for (size_t i = 0; i < fs.size(); i++)
         {
             make_file(dst + "/" + fs[i]);
-            if (0 != file_copy(src + "/" + fs[i], dst + "/" + fs[i]))
+            std::string src_file = src + "/" + fs[i];
+            std::string dst_file = dst + "/" + fs[i];
+            if (0 != file_copy(src_file, dst_file))
             {
+                //printf("#####Failed to copy %s to %s\n", src_file.c_str(), dst_file.c_str());
                 return -1;
             }
         }
