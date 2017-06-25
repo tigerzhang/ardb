@@ -1390,6 +1390,11 @@ OP_NAMESPACE_BEGIN
             m_db->GetProperty(cf, "rocksdb.stats", &cf_stat);
             all.append(cf_stat).append("\r\n");
         }
+
+	std::string stat;
+        if(m_db->GetProperty("rocksdb.stats", &stat)) {
+            all.append(stat).append("\r\n");
+        }
     }
 
     void RocksDBIterator::SetIterator(RocksIterData* iter)
